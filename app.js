@@ -3,7 +3,14 @@ var app = express();
 
 //handlebars engine
 var handlebars = require('express3-handlebars').create({
-    defaultLayout: 'main'
+    defaultLayout: 'main',
+    helpers: {
+        section: function(name, options) {
+            if (!this._sections) this._sections = {};
+            this._sections[name] = options.fn(this);
+            return null;
+        }
+    }
 });
 
 app.engine('handlebars', handlebars.engine);
@@ -35,10 +42,12 @@ app.get('/newsletter', function(req, res) {
 })
 
 app.post('/process', function(req, res) {
-    if(req.xhr || req.accept('json.html')=='json'){
-        console.log(req.xhr)
-        res.send({success:true});
-    }else{
+    if (req.xhr || req.accept('json.html') == 'json') {
+        console.log("--------------\n", req.xhr)
+        res.send({
+            success: true
+        });
+    } else {
         res.redirect(303, '/thank-you');
     }
 })
