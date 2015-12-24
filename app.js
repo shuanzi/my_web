@@ -42,8 +42,8 @@ app.get('/newsletter', function(req, res) {
 })
 
 app.post('/process', function(req, res) {
-    if (req.xhr || req.accept('json.html') == 'json') {
-        console.log("--------------\n", req.xhr)
+    if (req.xhr || req.accepts('json,html') == 'json') {
+        console.log("--------------\n", req)
         res.send({
             success: true
         });
