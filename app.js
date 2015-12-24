@@ -3,7 +3,7 @@ var app = express();
 
 //handlebars engine
 var handlebars = require('express3-handlebars').create({
-	defaultLayout: 'main'
+    defaultLayout: 'main'
 });
 
 app.engine('handlebars', handlebars.engine);
@@ -18,44 +18,45 @@ var films = ["Star Wars", "007", "Star Trek", "The God Father", "Xi yangyang"];
 
 
 app.get('/', function(req, res) {
-	res.render('home');
+    res.render('home');
 })
 
 app.get('/about', function(req, res) {
-	var randomFilm = films[Math.floor(Math.random() * films.length)];
-	res.render('about', {
-		film: randomFilm
-	});
+    var randomFilm = films[Math.floor(Math.random() * films.length)];
+    res.render('about', {
+        film: randomFilm
+    });
 })
 
 app.get('/newsletter', function(req, res) {
-	res.render('newsletter', {
-		crsf: "CRSF token goes here"
-	});
+    res.render('newsletter', {
+        csrf: "CRSF token goes here"
+    });
 })
 
-app.post('process', function(req, res) {
-	console.log('Form (from queystring):' + req.query.form);
-	console.log('CSRF token (form hideden form field):' + req.body._csrf);
-	console.log('Name (from visible form field): ' + req.body.name);
-	console.log('Email (from visible form field): ' + req.body.email);
-	res.redirect(303,"/thank-you");
+app.post('/process', function(req, res) {
+    if(req.xhr || req.accept('json.html')=='json'){
+        console.log(req.xhr)
+        res.send({success:true});
+    }else{
+        res.redirect(303, '/thank-you');
+    }
 })
 
 //404 page config
 app.use(function(req, res, next) {
-	res.status(404);
-	res.render('404');
+    res.status(404);
+    res.render('404');
 });
 
 //500 page config
 app.use(function(err, req, res, next) {
-	console.log(err)
-	res.status(500);
-	res.render('500')
+    console.log(err)
+    res.status(500);
+    res.render('500')
 });
 
 app.listen(app.get('port'), function() {
-	console.log('Express started on http://lcoalhost:' +
-		app.get('port') + '; press Ctrl-C to terminate.');
+    console.log('Express started on http://lcoalhost:' +
+        app.get('port') + '; press Ctrl-C to terminate.');
 })
