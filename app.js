@@ -9,7 +9,7 @@ var handlebars = require('express3-handlebars').create({
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 app.use(express.static(__dirname + '/public'));
-
+app.use(require('body-parser')());
 app.set('port', process.env.PORT || 3000);
 
 
@@ -22,8 +22,24 @@ app.get('/', function(req, res) {
 })
 
 app.get('/about', function(req, res) {
-	var randomFilm = films[Math.floor(Math.random()*films.length)];
-	res.render('about', {film:randomFilm});
+	var randomFilm = films[Math.floor(Math.random() * films.length)];
+	res.render('about', {
+		film: randomFilm
+	});
+})
+
+app.get('/newsletter', function(req, res) {
+	res.render('newsletter', {
+		crsf: "CRSF token goes here"
+	});
+})
+
+app.post('process', function(req, res) {
+	console.log('Form (from queystring):' + req.query.form);
+	console.log('CSRF token (form hideden form field):' + req.body._csrf);
+	console.log('Name (from visible form field): ' + req.body.name);
+	console.log('Email (from visible form field): ' + req.body.email);
+	res.redirect(303,"/thank-you");
 })
 
 //404 page config
