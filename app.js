@@ -1,71 +1,93 @@
-var express = require('express')
-var app = express();
-
-//handlebars engine
-var handlebars = require('express3-handlebars').create({
-    defaultLayout: 'main',
-    helpers: {
-        section: function(name, options) {
-            if (!this._sections) this._sections = {};
-            this._sections[name] = options.fn(this);
-            return null;
+require([
+    'libs/text!header.html',
+    'libs/text!home.html',
+    'libs/text!footer.html'
+], function(headerTpl, homeTpl, footerTpl) {
+    //parse app-key parse-js-key
+    Parse.initialize("fwb1Cw5NrNUXyTTFGiYz8wrU4TTFx2nMOgIAmILh", "mLvLApJB37JNIdiiK1GtTTyZn6bNEhGOUHrH0ZR6");
+    var ApplicationRouter = Backbone.Router.extend({
+        routes: {
+            "": "home",
+            "*actions": "home"
+        },
+        initialize: function() {
+            this.headerView = new HeaderView();
+            this.headerView.render();
+            this.footerView = new FooterView();
+            this.footerView.render();
+        },
+        home: function() {
+            this.homeView = new HomeView();
+            this.homeView.render();
         }
-    }
-});
-
-app.engine('handlebars', handlebars.engine);
-app.set('view engine', 'handlebars');
-app.use(express.static(__dirname + '/public'));
-app.use(require('body-parser')());
-app.set('port', process.env.PORT || 3000);
-
-
-//files
-var films = ["Star Wars", "007", "Star Trek", "The God Father", "Xi yangyang"];
-
-
-app.get('/', function(req, res) {
-    res.render('home');
-})
-
-app.get('/about', function(req, res) {
-    var randomFilm = films[Math.floor(Math.random() * films.length)];
-    res.render('about', {
-        film: randomFilm
     });
-})
 
-app.get('/newsletter', function(req, res) {
-    res.render('newsletter', {
-        csrf: "CRSF token goes here"
+    HeaderView = Backbone.View.extend({
+        el: "#header",
+        templateName: 'header.html'
+        template: headerTpl,
+        initialize: function() {
+
+        },
+        render: function() {
+            console.log(this.template);
+            $(this.el).html(_.template(this.template));
+        }
     });
-})
 
-app.post('/process', function(req, res) {
-    if (req.xhr || req.accepts('json,html') == 'json') {
-        console.log("--------------\n", req)
-        res.send({
-            success: true
-        });
-    } else {
-        res.redirect(303, '/thank-you');
-    }
-})
+    FooterView = Backbone.View.extend({
+        el: "#footer",
+        template: footerTpl,
+        render: function() {
+            console.log(this.template);
+            $(this.el).html(_.template(this.template));
+        }
+    });
 
-//404 page config
-app.use(function(req, res, next) {
-    res.status(404);
-    res.render('404');
+    Message = Parse.Object.extend({
+        className: "MessageBoard"
+    });
+
+    MessageBoard = Parse.Collection.extend({
+        model: Message
+    });
+
+    HomeView = Backbone.View.extend({
+        el: "#content",
+        template: homeTpl,
+        events: {
+            "click #send": "saveMessage"
+        },
+        initialize: function() {
+            this.collection = new MessageBoard();
+            this.collection.bind("all", this.render, this);
+            this.collection.fetch();
+            this.collection.on("add", function(message) {
+                message.save(null, {
+                    success: function(message) {
+                        console.log('saved ' + message);
+                    },
+                    error: function(err) {
+                        console.log('error ' + err);
+                    }
+                });
+                console.log('saved ' + message);
+            });
+        },
+        saveMessage: function() {
+            var newMessageForm = $("#new-message");
+            var username = newMessageForm.find('[name="username"]').attr('value');
+            var message = newMessageForm.find('[name="message"]').attr('value');
+            this.collection.add({
+                "username": username,
+                "message": message
+            });
+        },
+        render: function() {
+            console.log(this.collection);
+            $(this.el).html(_.template(this.template, this.collection));
+        }
+    })
+    app = new ApplicationRouter();
+    Backbone.history.start();
 });
-
-//500 page config
-app.use(function(err, req, res, next) {
-    console.log(err)
-    res.status(500);
-    res.render('500')
-});
-
-app.listen(app.get('port'), function() {
-    console.log('Express started on http://lcoalhost:' +
-        app.get('port') + '; press Ctrl-C to terminate.');
-})
